@@ -102,7 +102,6 @@ ti_simplelink_executable("lock_app") {
     "${project_dir}/main/main.cpp",
 
     # platform drivers here because they need sysconfig headers
-    "${chip_root}/third_party/ti_simplelink_sdk/cc13x2_26x2/openthread/radio.h",
     "${chip_root}/src/platform/cc13x2_26x2/Logging.cpp",
     "${chip_root}/third_party/ti_simplelink_sdk/cc13x2_26x2/crypto/aes_alt.c",
     "${chip_root}/third_party/ti_simplelink_sdk/cc13x2_26x2/crypto/aes_alt.h",
@@ -116,6 +115,7 @@ ti_simplelink_executable("lock_app") {
     "${chip_root}/third_party/ti_simplelink_sdk/cc13x2_26x2/openthread/entropy.c",
     "${chip_root}/third_party/ti_simplelink_sdk/cc13x2_26x2/openthread/misc.c",
     "${chip_root}/third_party/ti_simplelink_sdk/cc13x2_26x2/openthread/radio.c",
+    "${chip_root}/third_party/ti_simplelink_sdk/cc13x2_26x2/openthread/radio.h",
     "${chip_root}/third_party/ti_simplelink_sdk/cc13x2_26x2/openthread/settings.c",
     "${chip_root}/third_party/ti_simplelink_sdk/cc13x2_26x2/openthread/system.c",
     "${chip_root}/third_party/ti_simplelink_sdk/cc13x2_26x2/openthread/system.h",
