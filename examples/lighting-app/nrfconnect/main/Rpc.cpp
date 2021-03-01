@@ -18,6 +18,7 @@
 
 #include "Rpc.h"
 #include "AppTask.h"
+#include "LightingManager.h"
 #include "PigweedLogger.h"
 #include "PigweedLoggerMutex.h"
 #include "pigweed/RpcService.h"
@@ -47,6 +48,41 @@ public:
         GetAppTask().ButtonEventHandler(request.action << request.idx /* button_state */, 1 << request.idx /* has_changed */);
         return pw::OkStatus();
     }
+
+    pw::Status SetState(ServerContext &, const chip_rpc_LightEnabled & request, chip_rpc_Empty & response)
+    {
+        LightingMgr().InitiateAction(request.enabled ? LightingManager::ON_ACTION : LightingManager::OFF_ACTION,
+                                     AppEvent::kEventType_Button, 0, NULL);
+        return pw::OkStatus();
+    }
+
+    pw::Status GetState(ServerContext &, const chip_rpc_Empty & request, chip_rpc_LightEnabled & response)
+    {
+        response.enabled = LightingMgr().IsTurnedOn();
+        return pw::OkStatus();
+    }
+};
+
+class DeviceCommon final : public generated::DeviceCommon<DeviceCommon>
+{
+public:
+    pw::Status FactoryReset(ServerContext & ctx, const chip_rpc_Empty & request, chip_rpc_Empty & response)
+    {
+        // TODO: Clear data from KVS
+        DeviceLayer::ConfigurationMgr().InitiateFactoryReset();
+        return pw::OkStatus();
+    }
+    pw::Status Reset(ServerContext & ctx, const chip_rpc_Empty & request, chip_rpc_Empty & response)
+    {
+        NVIC_SystemReset();
+        // WILL NOT RETURN
+        return pw::OkStatus();
+    }
+    pw::Status TriggerOta(ServerContext & ctx, const chip_rpc_Empty & request, chip_rpc_Empty & response)
+    {
+        // TODO: auto err = DeviceLayer::SoftwareUpdateMgr().CheckNow();
+        return pw::Status::Unimplemented();
+    }
 };
 
 namespace {
@@ -60,10 +96,12 @@ K_THREAD_STACK_DEFINE(rpc_stack_area, kRpcTaskSize);
 struct k_thread rpc_thread_data;
 
 chip::rpc::LightingService lighting_service;
+chip::rpc::DeviceCommon device_common;
 
 void RegisterServices(pw::rpc::Server & server)
 {
     server.RegisterService(lighting_service);
+    server.RegisterService(device_common);
 }
 
 } // namespace

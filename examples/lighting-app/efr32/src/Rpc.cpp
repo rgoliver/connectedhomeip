@@ -23,6 +23,7 @@
 #include "pigweed/RpcService.h"
 
 #include "pigweed_lighting.rpc.pb.h"
+#include "platform/ConfigurationManager.h"
 #include "pw_hdlc/rpc_channel.h"
 #include "pw_hdlc/rpc_packets.h"
 #include "pw_rpc/server.h"
@@ -41,6 +42,41 @@ public:
         GetAppTask().ButtonEventHandler(request.idx /* PB 0 or PB 1 */, request.action /* 0 =PRESSED 1= RELEASE */);
         return pw::OkStatus();
     }
+
+    pw::Status SetState(ServerContext &, const chip_rpc_LightEnabled & request, chip_rpc_Empty & response)
+    {
+        LightMgr().InitiateAction(AppEvent::kEventType_Light,
+                                  request.enabled ? LightingManager::ON_ACTION : LightingManager::OFF_ACTION);
+        return pw::OkStatus();
+    }
+
+    pw::Status GetState(ServerContext &, const chip_rpc_Empty & request, chip_rpc_LightEnabled & response)
+    {
+        response.enabled = LightMgr().IsLightOn();
+        return pw::OkStatus();
+    }
+};
+
+class DeviceCommon final : public generated::DeviceCommon<DeviceCommon>
+{
+public:
+    pw::Status FactoryReset(ServerContext & ctx, const chip_rpc_Empty & request, chip_rpc_Empty & response)
+    {
+        // TODO: Clear data from KVS
+        DeviceLayer::ConfigurationMgr().InitiateFactoryReset();
+        return pw::OkStatus();
+    }
+    pw::Status Reset(ServerContext & ctx, const chip_rpc_Empty & request, chip_rpc_Empty & response)
+    {
+        NVIC_SystemReset();
+        // WILL NOT RETURN
+        return pw::OkStatus();
+    }
+    pw::Status TriggerOta(ServerContext & ctx, const chip_rpc_Empty & request, chip_rpc_Empty & response)
+    {
+        // TODO: auto err = DeviceLayer::SoftwareUpdateMgr().CheckNow();
+        return pw::Status::Unimplemented();
+    }
 };
 
 namespace {
@@ -51,10 +87,12 @@ using std::byte;
 static TaskHandle_t sRpcTaskHandle;
 
 chip::rpc::LightingService lighting_service;
+chip::rpc::DeviceCommon device_common;
 
 void RegisterServices(pw::rpc::Server & server)
 {
     server.RegisterService(lighting_service);
+    server.RegisterService(device_common);
 }
 
 } // namespace

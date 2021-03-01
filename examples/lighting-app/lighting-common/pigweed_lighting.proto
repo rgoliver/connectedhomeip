@@ -13,6 +13,18 @@ message Button {
   uint32 action = 2;
 }
 
+message LightEnabled {
+  bool enabled = 1;
+}
+
 service LightingService {
   rpc ButtonEvent(Button) returns (Empty){}
+  rpc SetState(LightEnabled) returns (Empty){}
+  rpc GetState(Empty) returns (LightEnabled){}
+}
+
+service DeviceCommon {
+  rpc FactoryReset(Empty) returns (Empty){}
+  rpc Reset(Empty) returns (Empty){}
+  rpc TriggerOta(Empty) returns (Empty){}
 }
