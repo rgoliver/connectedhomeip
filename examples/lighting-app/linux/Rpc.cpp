@@ -1,6 +1,6 @@
 /*
  *
- *    Copyright (c) 2020 Project CHIP Authors
+ *    Copyright (c) 2021 Project CHIP Authors
  *    All rights reserved.
  *
  *    Licensed under the Apache License, Version 2.0 (the "License");
@@ -17,25 +17,18 @@
  */
 
 #include "Rpc.h"
-#include "AppTask.h"
-#include "LightingManager.h"
-#include "PigweedLogger.h"
-#include "PigweedLoggerMutex.h"
-#include "pigweed/RpcService.h"
 
-#include "main/pigweed_lighting.rpc.pb.h"
+#include "LightingManager.h"
+#include "pigweed_lighting.rpc.pb.h"
 #include "pw_hdlc/rpc_channel.h"
 #include "pw_hdlc/rpc_packets.h"
 #include "pw_rpc/server.h"
+#include "pw_rpc_system_server/rpc_server.h"
 #include "pw_stream/sys_io_stream.h"
-#include "pw_sys_io/sys_io.h"
-#include "pw_sys_io_nrfconnect/init.h"
 
-#include <array>
-#include <kernel.h>
-#include <logging/log.h>
+#include <platform/CHIPDeviceError.h>
 
-LOG_MODULE_DECLARE(app);
+#include <thread>
 
 namespace chip {
 namespace rpc {
@@ -45,14 +38,12 @@ class LightingService final : public generated::LightingService<LightingService>
 public:
     pw::Status ButtonEvent(ServerContext & ctx, const chip_rpc_Button & request, chip_rpc_Empty & response)
     {
-        GetAppTask().ButtonEventHandler(request.action << request.idx /* button_state */, 1 << request.idx /* has_changed */);
-        return pw::OkStatus();
+        return pw::Status::Unimplemented();
     }
 
     pw::Status SetState(ServerContext &, const chip_rpc_LightEnabled & request, chip_rpc_Empty & response)
     {
-        LightingMgr().InitiateAction(request.enabled ? LightingManager::ON_ACTION : LightingManager::OFF_ACTION,
-                                     AppEvent::kEventType_Button, 0, NULL);
+        LightingMgr().InitiateAction(request.enabled ? LightingManager::ON_ACTION : LightingManager::OFF_ACTION);
         return pw::OkStatus();
     }
 
@@ -68,36 +59,28 @@ class DeviceCommon final : public generated::DeviceCommon<DeviceCommon>
 public:
     pw::Status FactoryReset(ServerContext & ctx, const chip_rpc_Empty & request, chip_rpc_Empty & response)
     {
-        // TODO: Clear data from KVS
-        DeviceLayer::ConfigurationMgr().InitiateFactoryReset();
-        return pw::OkStatus();
+        return pw::Status::Unimplemented();
     }
     pw::Status Reset(ServerContext & ctx, const chip_rpc_Empty & request, chip_rpc_Empty & response)
     {
-        NVIC_SystemReset();
-        // WILL NOT RETURN
-        return pw::OkStatus();
+        return pw::Status::Unimplemented();
     }
     pw::Status TriggerOta(ServerContext & ctx, const chip_rpc_Empty & request, chip_rpc_Empty & response)
     {
-        // TODO: auto err = DeviceLayer::SoftwareUpdateMgr().CheckNow();
         return pw::Status::Unimplemented();
     }
     pw::Status DeviceInfo(ServerContext &, const chip_rpc_Empty & request, chip_rpc_DeviceDetails & response)
     {
-        return pw::Status::Unimplemented();
+        snprintf(response.fw_version, sizeof(response.fw_version), "0.0.0");
+        snprintf(response.vendor_id, sizeof(response.vendor_id), "Linux");
+        snprintf(response.product_id, sizeof(response.product_id), "LightingApp");
+        snprintf(response.serial_number, sizeof(response.serial_number), "1234567890");
+        return pw::OkStatus();
     }
 };
 
 namespace {
-
 using std::byte;
-
-constexpr size_t kRpcTaskSize = 4096;
-constexpr int kRpcPriority    = 5;
-
-K_THREAD_STACK_DEFINE(rpc_stack_area, kRpcTaskSize);
-struct k_thread rpc_thread_data;
 
 chip::rpc::LightingService lighting_service;
 chip::rpc::DeviceCommon device_common;
@@ -110,17 +93,19 @@ void RegisterServices(pw::rpc::Server & server)
 
 } // namespace
 
-k_tid_t Init()
+void RunRpcService()
 {
-    pw_sys_io_Init();
-    k_tid_t tid = k_thread_create(&rpc_thread_data, rpc_stack_area, K_THREAD_STACK_SIZEOF(rpc_stack_area), RunRpcService, NULL,
-                                  NULL, NULL, kRpcPriority, 0, K_NO_WAIT);
-    return tid;
+    pw::rpc::system_server::Init();
+    RegisterServices(pw::rpc::system_server::Server());
+    pw::rpc::system_server::Start();
 }
 
-void RunRpcService(void *, void *, void *)
+int Init()
 {
-    Start(RegisterServices, &logger_mutex);
+    int err = 0;
+    std::thread rpc_service(RunRpcService);
+    rpc_service.detach();
+    return err;
 }
 
 } // namespace rpc

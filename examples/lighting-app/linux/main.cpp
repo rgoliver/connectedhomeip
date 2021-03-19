@@ -36,6 +36,8 @@
 #include "Options.h"
 #include "Server.h"
 
+#include "Rpc.h"
+
 #include <cassert>
 #include <iostream>
 
@@ -163,7 +165,7 @@ int main(int argc, char * argv[])
 
     err = PrintQRCodeContent();
     SuccessOrExit(err);
-
+    chip::rpc::Init();
     chip::DeviceLayer::PlatformMgrImpl().AddEventHandler(EventHandler, 0);
 
     chip::DeviceLayer::ConnectivityMgr().SetBLEDeviceName(nullptr); // Use default device name (CHIP-XXXX)

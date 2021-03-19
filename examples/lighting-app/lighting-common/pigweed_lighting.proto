@@ -17,6 +17,13 @@ message LightEnabled {
   bool enabled = 1;
 }
 
+message DeviceDetails {
+  string vendor_id = 1;
+  string product_id = 2;
+  string fw_version = 3;
+  string serial_number = 4;
+}
+
 service LightingService {
   rpc ButtonEvent(Button) returns (Empty){}
   rpc SetState(LightEnabled) returns (Empty){}
@@ -27,4 +34,5 @@ service DeviceCommon {
   rpc FactoryReset(Empty) returns (Empty){}
   rpc Reset(Empty) returns (Empty){}
   rpc TriggerOta(Empty) returns (Empty){}
+  rpc DeviceInfo(Empty) returns (DeviceDetails){}
 }

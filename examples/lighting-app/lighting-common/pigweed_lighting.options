@@ -1,0 +1,5 @@
+
+chip.rpc.DeviceDetails.vendor_id max_size:16
+chip.rpc.DeviceDetails.product_id max_size:16
+chip.rpc.DeviceDetails.fw_version max_size:16
+chip.rpc.DeviceDetails.serial_number max_size:16

@@ -13,6 +13,9 @@
 # limitations under the License.
 
 import("//build_overrides/chip.gni")
+import("//build_overrides/pigweed.gni")
+import("$dir_pw_protobuf_compiler/proto.gni")
+import("$dir_pw_build/target_types.gni")
 
 import("${chip_root}/build/chip/tools.gni")
 import("${chip_root}/src/app/common_flags.gni")
@@ -26,6 +29,11 @@ config("includes") {
   ]
 }
 
+  pw_proto_library("pw_light_service_proto") {
+    sources = [ "${chip_root}/examples/lighting-app/lighting-common/pigweed_lighting.proto" ]
+    inputs = [ "${chip_root}/examples/lighting-app/lighting-common/pigweed_lighting.options" ]
+  }
+
 executable("chip-lighting-app") {
   sources = [
     "LightingManager.cpp",
@@ -34,6 +42,10 @@ executable("chip-lighting-app") {
     "main.cpp",
   ]
 
+  sources += [
+    "${dir_pigweed}/targets/host/system_rpc_server.cc",
+    "${dir_pw_hdlc}/rpc_example/hdlc_rpc_server.cc"
+  ]
   public_configs = [ ":includes" ]
 
   deps = [
@@ -41,6 +53,25 @@ executable("chip-lighting-app") {
     "${chip_root}/src/lib",
   ]
 
+  public_deps = [
+    "$dir_pw_rpc:server",
+    "$dir_pw_rpc/nanopb:echo_service",
+    "$dir_pw_rpc/system_server",
+    dir_pw_hdlc,
+    dir_pw_log,
+    "$dir_pw_sync:mutex",
+    ":pw_light_service_proto.nanopb_rpc",
+    "$dir_pw_checksum",
+    "$dir_pw_stream",
+    "${chip_root}/config/linux/lib/pw_rpc:pw_rpc",
+  ]
+
+  sources += [
+    "Rpc.cpp",
+  ]
+  include_dirs = [
+    "out/debug/gen/pw_light_service_proto/third_party/connectedhomeip/examples/lighting-app/lighting-common",
+  ]
   output_dir = root_out_dir
 }
 
