@@ -24,12 +24,11 @@
 #include "freertos/event_groups.h"
 #include "freertos/semphr.h"
 #include "freertos/task.h"
-#include "main/gdm_wifi_base_rpc.rpc.pb.h"
-#include "main/ipv6_only_rpc.rpc.pb.h"
+#include "gdm_service/gdm_wifi_base_rpc.rpc.pb.h"
+#include "ipv6_service/ipv6_only_rpc.rpc.pb.h"
 #include "nvs_flash.h"
 #include "pw_containers/flat_map.h"
 #include "pw_log/log.h"
-#include "pw_rpc/echo_service_nanopb.h"
 #include "pw_rpc/server.h"
 #include "pw_status/status.h"
 #include "pw_status/try.h"
@@ -601,13 +600,11 @@ TaskHandle_t rpcTaskHandle;
 TaskHandle_t scanResultsTaskHandle;
 TaskHandle_t testTaskHandle;
 
-pw::rpc::EchoService echo_service;
 chip::rpc::GDMWifiBase gdm_wifi_service;
 chip::rpc::TestService test_service;
 
 void RegisterServices(pw::rpc::Server & server)
 {
-    server.RegisterService(echo_service);
     server.RegisterService(gdm_wifi_service);
     server.RegisterService(test_service);
 }

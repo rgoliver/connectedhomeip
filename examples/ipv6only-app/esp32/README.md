@@ -66,7 +66,7 @@ make sure the IDF_PATH has been exported(See the manual setup steps above).
 
         To choose from the different configuration options, run menuconfig
 
-          $ idf make menuconfig
+          $ idf.py make menuconfig
 
         This example uses UART0 for serial communication. You can change this through
         `PW RPC Example Configuration`. As a result, the console has been shifted to UART1
@@ -75,11 +75,11 @@ make sure the IDF_PATH has been exported(See the manual setup steps above).
 
         To use the default configuration options, run the default config
 
-          $ idf make defconfig
+          $ idf.py make defconfig
 
 -   Run make to build the demo application.
 
-          $ idf make
+          $ idf.py build
 
 -   After building the application, to flash it outside of VSCode, connect your
     device via USB. Then run the following command to flash the demo application
@@ -90,7 +90,7 @@ make sure the IDF_PATH has been exported(See the manual setup steps above).
     before flashing. For ESP32-DevKitC devices this is labeled in the
     [functional description diagram](https://docs.espressif.com/projects/esp-idf/en/latest/esp32/hw-reference/esp32/get-started-devkitc.html#functional-description).
 
-          $ idf make flash ESPPORT=/dev/tty.SLAB_USBtoUART
+          $ idf.py flash ESPPORT=/dev/tty.SLAB_USBtoUART
 
     Note: Some users might have to install the
     [VCP driver](https://www.silabs.com/products/development-tools/software/usb-to-uart-bridge-vcp-drivers)
@@ -101,9 +101,4 @@ make sure the IDF_PATH has been exported(See the manual setup steps above).
 Run the following command to start an interactive Python shell, where the Echo
 RPC commands can be invoked:
 
-        python -m pw_hdlc.rpc_console --device /dev/tty.SLAB_USBtoUART -b 115200 $CHIP_ROOT/third_party/pigweed/repo/pw_rpc/pw_rpc_protos/echo.proto -o /tmp/pw_rpc.out
-
-To send an Echo RPC message, type the following command, where the actual
-message is the text in quotation marks after the `msg=` phrase:
-
-        rpcs.pw.rpc.EchoService.Echo(msg="hi")
+    python -m pw_hdlc.rpc_console --device /dev/ttyUSB1 -b 115200 ../common/gdm_wifi_base_rpc.proto ../common/ipv6_only_rpc.proto
