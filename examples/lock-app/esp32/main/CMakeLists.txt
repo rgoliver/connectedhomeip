@@ -32,5 +32,77 @@ idf_component_register(PRIV_INCLUDE_DIRS
                       "${CMAKE_SOURCE_DIR}/third_party/connectedhomeip/src/app/clusters/general-commissioning-server"
                       PRIV_REQUIRES chip QRCode tft spidriver bt screen-framework)
 
-set_property(TARGET ${COMPONENT_LIB} PROPERTY CXX_STANDARD 14) 
 target_compile_options(${COMPONENT_LIB} PRIVATE "-DLWIP_IPV6_SCOPES=0" "-DCHIP_HAVE_CONFIG_H")
+
+if (CONFIG_PW_RPC_ENABLED)
+
+idf_component_get_property(chip_lib chip COMPONENT_LIB)
+set(WRAP_FUNCTIONS esp_log_write)
+target_link_libraries(${chip_lib} INTERFACE "-Wl,--wrap=${WRAP_FUNCTIONS}")
+
+get_filename_component(CHIP_ROOT ../third_party/connectedhomeip REALPATH)
+
+set(PIGWEED_ROOT "${CHIP_ROOT}/third_party/pigweed/repo")
+include(${PIGWEED_ROOT}/pw_build/pigweed.cmake)
+include(${PIGWEED_ROOT}/pw_protobuf_compiler/proto.cmake)
+set(dir_pw_third_party_nanopb "${CHIP_ROOT}/third_party/nanopb/repo" CACHE STRING "" FORCE)
+
+pw_proto_library(device_service
+  SOURCES
+    ${CHIP_ROOT}/examples/common/pigweed/protos/device_service.proto
+  INPUTS
+    ${CHIP_ROOT}/examples/common/pigweed/protos/device_service.options
+  PREFIX
+    device_service
+  STRIP_PREFIX
+    ${CHIP_ROOT}/examples/common/pigweed/protos
+  DEPS
+    pw_protobuf.common_protos
+)
+
+target_link_libraries(${COMPONENT_LIB} PUBLIC
+  device_service.nanopb_rpc
+)
+
+target_sources(${COMPONENT_LIB} PRIVATE
+  rpc/Rpc.cpp
+  ../../../common/pigweed/RpcService.cpp
+  ../../../common/pigweed/esp32/PigweedLoggerMutex.cpp
+  ../../../platform/esp32/PigweedLogger.cpp
+)
+
+target_include_directories(${COMPONENT_LIB} PRIVATE
+  "${CMAKE_SOURCE_DIR}/third_party/connectedhomeip/third_party/pigweed/repo/pw_sys_io/public"
+  "${CMAKE_SOURCE_DIR}/third_party/connectedhomeip/third_party/pigweed/repo/pw_assert/public"
+  "${CMAKE_SOURCE_DIR}/third_party/connectedhomeip/third_party/pigweed/repo/pw_assert_log/public"
+  "${CMAKE_SOURCE_DIR}/third_party/connectedhomeip/third_party/pigweed/repo/pw_assert_log/public_overrides"
+  "${CMAKE_SOURCE_DIR}/third_party/connectedhomeip/third_party/pigweed/repo/pw_bytes/public"
+  "${CMAKE_SOURCE_DIR}/third_party/connectedhomeip/third_party/pigweed/repo/pw_checksum/public"
+  "${CMAKE_SOURCE_DIR}/third_party/connectedhomeip/third_party/pigweed/repo/pw_containers/public"
+  "${CMAKE_SOURCE_DIR}/third_party/connectedhomeip/third_party/pigweed/repo/pw_hdlc/public"
+  "${CMAKE_SOURCE_DIR}/third_party/connectedhomeip/third_party/pigweed/repo/pw_log/public"
+  "${CMAKE_SOURCE_DIR}/third_party/connectedhomeip/third_party/pigweed/repo/pw_log_basic/public"
+  "${CMAKE_SOURCE_DIR}/third_party/connectedhomeip/third_party/pigweed/repo/pw_log_basic/public_overrides"
+  "${CMAKE_SOURCE_DIR}/third_party/connectedhomeip/third_party/pigweed/repo/pw_span/public_overrides"
+  "${CMAKE_SOURCE_DIR}/third_party/connectedhomeip/third_party/pigweed/repo/pw_span/public"
+  "${CMAKE_SOURCE_DIR}/third_party/connectedhomeip/third_party/pigweed/repo/pw_polyfill/public"
+  "${CMAKE_SOURCE_DIR}/third_party/connectedhomeip/third_party/pigweed/repo/pw_polyfill/standard_library_public"
+  "${CMAKE_SOURCE_DIR}/third_party/connectedhomeip/third_party/pigweed/repo/pw_polyfill/public_overrides"
+  "${CMAKE_SOURCE_DIR}/third_party/connectedhomeip/third_party/pigweed/repo/pw_rpc/public"
+  "${CMAKE_SOURCE_DIR}/third_party/connectedhomeip/third_party/pigweed/repo/pw_rpc/nanopb/public"
+  "${CMAKE_SOURCE_DIR}/third_party/connectedhomeip/third_party/pigweed/repo/pw_rpc/raw/public"
+  "${CMAKE_SOURCE_DIR}/third_party/connectedhomeip/third_party/pigweed/repo/pw_protobuf/public"
+  "${CMAKE_SOURCE_DIR}/third_party/connectedhomeip/third_party/pigweed/repo/pw_status/public"
+  "${CMAKE_SOURCE_DIR}/third_party/connectedhomeip/third_party/pigweed/repo/pw_stream/public"
+  "${CMAKE_SOURCE_DIR}/third_party/connectedhomeip/third_party/pigweed/repo/pw_result/public"
+  "${CMAKE_SOURCE_DIR}/third_party/connectedhomeip/third_party/pigweed/repo/pw_varint/public"
+  "${CMAKE_SOURCE_DIR}/third_party/connectedhomeip/third_party/pigweed/repo/pw_preprocessor/public"
+  "${CMAKE_SOURCE_DIR}/third_party/connectedhomeip/third_party/pigweed/repo/pw_rpc/system_server/public"
+  "${CMAKE_SOURCE_DIR}/../../platform/esp32/pw_sys_io/public"
+  "${CMAKE_SOURCE_DIR}/../../platform/esp32"
+  "${CMAKE_SOURCE_DIR}/../../common/pigweed"
+  "${CMAKE_SOURCE_DIR}/../../common/pigweed/esp32"
+  "${IDF_PATH}/components/freertos/include/freertos"
+)
+
+endif(CONFIG_PW_RPC_ENABLED)

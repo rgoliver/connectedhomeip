@@ -35,6 +35,12 @@
 #include <vector>
 
 #include <support/ErrorStr.h>
+
+#if CONFIG_PW_RPC_ENABLED
+#include "PigweedLogger.h"
+#include "Rpc.h"
+#endif  // CONFIG_PW_RPC_ENABLED
+
 using namespace ::chip;
 using namespace ::chip::DeviceManager;
 using namespace ::chip::DeviceLayer;
@@ -42,6 +48,29 @@ using namespace ::chip::DeviceLayer;
 static const char * TAG = "lock-app";
 
 static DeviceCallbacks EchoCallbacks;
+
+#if CONFIG_PW_RPC_ENABLED
+static bool uartInitialised;
+
+extern "C" void __wrap_esp_log_write(esp_log_level_t level, const char * tag, const char * format, ...)
+{
+    va_list v;
+    va_start(v, format);
+#ifndef CONFIG_LOG_DEFAULT_LEVEL_NONE
+    if (uartInitialised)
+    {
+        char formattedMsg[CHIP_CONFIG_LOG_MESSAGE_MAX_SIZE];
+        size_t len = vsnprintf(formattedMsg, sizeof formattedMsg, format, v);
+        if (len >= sizeof formattedMsg)
+        {
+            len = sizeof formattedMsg - 1;
+        }
+        PigweedLogger::putString(formattedMsg, len);
+    }
+#endif
+    va_end(v);
+}
+#endif  // CONFIG_PW_RPC_ENABLED
 
 extern "C" void app_main()
 {
@@ -53,6 +82,11 @@ extern "C" void app_main()
         ESP_LOGE(TAG, "nvs_flash_init() failed: %s", ErrorStr(err));
         return;
     }
+
+#if CONFIG_PW_RPC_ENABLED
+    chip::rpc::Init();
+    uartInitialised = true;
+#endif  // CONFIG_PW_RPC_ENABLED
 
     ESP_LOGI(TAG, "==================================================");
     ESP_LOGI(TAG, "chip-esp32-lock-example starting");

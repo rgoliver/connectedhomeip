@@ -95,6 +95,12 @@ If packages are already installed then simply activate it.
 
           $ idf.py monitor ESPPORT=/dev/ttyUSB0
 
+### Building with Pigweed RPCs
+
+Pigweed RPCs provide a useful debug channel, which is particularly useful for
+tests and automation. This can be enabled within menuconfig through 'PW RPC
+Debug channel' -> 'PW_RPC_ENABLED'
+
 ## Using the Echo Server
 
 ### Connect the ESP32 to a 2.4GHz Network of your choice
